@@ -6,11 +6,14 @@ import dev.lusungu.salamapesa.payments.models.Payment;
 import dev.lusungu.salamapesa.payments.repositories.IdempotencyRepository;
 import dev.lusungu.salamapesa.payments.repositories.PaymentRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -22,9 +25,11 @@ public class PaymentService {
     private final ExternalService externalService;
 
     @CircuitBreaker(name = "payment", fallbackMethod = "paymentFallback")
+    @Retryable(delay = 1, maxDelay = 10, maxRetries = 5, jitter = 1, timeUnit = TimeUnit.SECONDS)
+    @Transactional
     public String makePayment(PaymentRequestDto dto) {
         UUID userId = UUID.randomUUID();
-        if (idempotencyRepository.existsByUserIdAndKey(userId, dto.idempotencyKey())) {
+        if (idempotencyRepository.existsByKey(dto.idempotencyKey())) {
             return "Payment already processed";
         } else {
             idempotencyRepository.save(Idempotency.builder().key(dto.idempotencyKey()).userId(userId).build());
@@ -44,7 +49,7 @@ public class PaymentService {
     }
 
     private String paymentFallback(PaymentRequestDto dto, Throwable ex) {
-        log.error(ex.getMessage());
+        log.error(ex.getCause().getMessage());
         return "Payment has failed";
     }
 }
