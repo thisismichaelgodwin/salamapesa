@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: salamapesa
+  datasource:
+    url: jdbc:postgresql://localhost:5432/salamapesa
+    password: lusungugodwin
+    username: lusungugodwin
