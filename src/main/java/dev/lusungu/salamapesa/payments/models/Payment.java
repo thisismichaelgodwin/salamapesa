@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.math.BigDecimal;
@@ -38,12 +39,11 @@ public class Payment {
     @Column(name = "status", length = Integer.MAX_VALUE)
     private String status;
 
-    @NotNull
     @ColumnDefault("now()")
     @Column(name = "created_at", nullable = false)
+    @CreationTimestamp
     private Instant createdAt;
 
-    @NotNull
     @ColumnDefault("0")
     @Column(name = "version", nullable = false)
     @Version
